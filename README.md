@@ -1,48 +1,174 @@
-I need to design architecture for a web app : seeking for a job or preparing application, CV, training for interview requires a lot of effort. Idea is to summarize and help by building personal trainier who does this. It can preserve your data as a generic profile and help pitching for a new position on a today dynamic labour market. It can train with you and go through check lists.
+# Job Trainer AI — Personal Career Coach
 
-## What it does
-1. Captures basic data like
-- Basic details
-- Asks question to build main profile desc
-- Collect your skills
-- Memorize details for future CVs and applications
-- Does market analysis for you
-- Works as an agent and captures interesting details if you allow him
-## How we built it
-- Web application
-- Creates login and profile
-- Interacts with AI
-- Stores memory
+An AI-powered web application that helps job seekers build profiles, tailor CVs, prepare for interviews, and navigate the labor market — all through a persistent AI trainer that learns and remembers.
 
+## What It Does
 
-## Design
+1. **Captures professional data** through guided conversation
+   - Basic details, work history, skills, education
+   - AI asks probing questions to build a rich profile narrative
+   - Memorizes details for future CV generation and applications
+2. **Market analysis** — parses job postings, scores match, identifies skill gaps
+3. **CV/cover letter tailoring** — generates role-specific documents with transparent gap handling
+4. **Interview training** — mock interviews with scoring, feedback, and improvement suggestions
+5. **Agent-based job capture** — browser extension captures job postings as the user browses (with permission)
 
-![Design](job_trainer_architecture_overview.png)
+## Architecture Overview
 
-Here's a layered architecture designed around the user journey — from profile capture to AI agent assistance.Click any block to drill in. Here's the rationale for each layer:
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         CLIENT LAYER                                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────────┐  │
+│  │  Next.js SPA │  │  PWA (Mobile)│  │  Browser Extension       │  │
+│  │  (Main App)  │  │  (Responsive)│  │  (Job Capture Agent)     │  │
+│  └──────┬───────┘  └──────┬───────┘  └────────────┬─────────────┘  │
+└─────────┼──────────────────┼───────────────────────┼────────────────┘
+          │                  │                       │
+          ▼                  ▼                       ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                       API GATEWAY                                    │
+│  JWT/OAuth Auth │ WebSocket/SSE │ Rate Limiting │ Request Routing   │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+          ┌──────────────────┼──────────────────┐
+          ▼                  ▼                  ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│  PROFILE SERVICE│ │ DOCUMENT SERVICE│ │ TRAINING SERVICE│
+│  • Intake wizard│ │ • CV generation │ │ • Mock interview│
+│  • Skills mgmt  │ │ • Templates     │ │ • Checklists    │
+│  • Work history │ │ • Versioning    │ │ • Scoring       │
+│  • Preferences  │ │ • Export        │ │ • Session hist  │
+└────────┬────────┘ └────────┬────────┘ └────────┬────────┘
+         │                   │                   │
+         ▼                   ▼                   ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    AI ORCHESTRATION LAYER                             │
+│  ┌────────────────┐ ┌──────────────┐ ┌─────────────┐ ┌───────────┐ │
+│  │ Persona Builder│ │ Market Scout │ │ Pitch Writer│ │ Interview │ │
+│  │ (Profile Q&A)  │ │ (Job Intel)  │ │ (CV/CL Gen) │ │ Coach     │ │
+│  └───────┬────────┘ └──────┬───────┘ └──────┬──────┘ └─────┬─────┘ │
+│          └──────────────────┴────────────────┴──────────────┘       │
+│                              │                                       │
+│                    ┌─────────▼─────────┐                            │
+│                    │   LLM Gateway     │                            │
+│                    │ • Context assembly│                            │
+│                    │ • Memory mgmt     │                            │
+│                    │ • Tool calling    │                            │
+│                    │ • Streaming       │                            │
+│                    └───────────────────┘                            │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+          ┌──────────────────┼──────────────────┐
+          ▼                  ▼                  ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│   PostgreSQL    │ │    pgvector     │ │  S3 + Metadata  │
+│   (Relational)  │ │   (Embeddings)  │ │   (Documents)   │
+│                 │ │                 │ │                   │
+│ • Users/Auth    │ │ • Profile embeds│ │ • CV exports     │
+│ • Profile data  │ │ • Job embeds    │ │ • Cover letters  │
+│ • Skills        │ │ • Memory embeds │ │ • Job snapshots  │
+│ • Work history  │ │ • Skill clusters│ │ • Templates      │
+│ • Sessions      │ │                 │ │                   │
+└─────────────────┘ └─────────────────┘ └─────────────────┘
+```
 
-**Client layer** has three surfaces: the main SPA for guided profile work, a PWA for mobile access, and a browser extension that passively captures job postings as the user browses — this is the "agent captures interesting details" feature you described, with explicit user permission.
+## Tech Stack
 
-**API Gateway** is a single entry point handling JWT/OAuth authentication, WebSocket connections (for streaming AI responses), and routing. This keeps auth logic in one place rather than scattered across services.
+| Layer | Technology | Rationale |
+|-------|-----------|-----------|
+| Frontend | Next.js 14+ (App Router), TypeScript, Tailwind | SSR for public pages, SPA for app |
+| State | Zustand + TanStack Query | Lightweight client state + server data caching |
+| Backend | Next.js API routes (BFF) on SAE | Start monolithic, extract when needed |
+| Database | ApsaraDB RDS PostgreSQL + pgvector | Relational + vector in one DB, managed |
+| Auth | IDaaS (Alibaba Cloud) | OAuth/OIDC, Google/GitHub/LinkedIn, MFA |
+| AI | DashScope — Qwen-Max / Qwen-Plus + text-embedding-v3 | Qwen models via OpenAI-compatible API |
+| Streaming | SSE (Server-Sent Events) | Simpler than WebSocket, works with serverless |
+| File Storage | OSS (Alibaba Cloud) | S3-compatible, CV exports, profile photos |
+| Cache/Queue | ApsaraDB Redis (Tair) + BullMQ | Session cache, async job processing |
+| CDN | Alibaba Cloud CDN | Edge caching, global delivery |
+| Region | ap-southeast-1 (Singapore) | International users, GDPR-compatible |
 
-**Core Services** are split into three clear domains: Profile (intake, skills, history), Documents (CV generation, templates, versioning), and Training (mock interviews, checklists, session scoring). Each can be a separate microservice or a module within a monolith early on — start as a monolith and extract only when load demands it.
+## AI Memory Architecture
 
-**AI Orchestration Layer** is the heart of the app. Four specialized sub-agents share a common LLM gateway:
+Four-layer memory system:
 
-- **Persona Builder** — conversational Q&A to build the user's profile narrative
-- **Market Scout** — pulls job board data, salary benchmarks, company intel
-- **Pitch Writer** — takes a job posting + user profile and generates a tailored CV/cover letter
-- **Interview Coach** — roleplays as an interviewer, scores answers, gives feedback
+| Layer | Purpose | Storage |
+|-------|---------|---------|
+| **L1: Working Memory** | Current prompt context (profile slice, job, recent messages) | Assembled per-request |
+| **L2: Semantic Memory** | Long-term knowledge (profile, jobs, skills as embeddings) | pgvector |
+| **L3: Episodic Memory** | Conversation learnings, user corrections, preferences | pgvector + Postgres |
+| **L4: Procedural Memory** | Agent system prompts, behaviors, prompt templates | Code/config |
 
-The LLM gateway handles context assembly (what slice of the user's profile to inject), memory management, tool calling, and streaming.
+## Key Features
 
-**Data layer** uses three stores: a relational DB (Postgres) for structured user data and auth, a vector store (Pinecone or pgvector) for semantic profile retrieval so the LLM can find the most relevant experience snippets, and a document store (S3 + metadata DB) for CVs and saved job postings.
+### CV Tailoring Pipeline
+1. **Parse JD** → Extract structured signals (skills, seniority, keywords)
+2. **Retrieve profile** → Semantic search for 5-8 most relevant snippets
+3. **Gap analysis** → Scored diff: matches vs gaps with strategies
+4. **Generate & stream** → Section-by-section CV written token-by-token into editor
 
-**Suggested tech stack for a first version:** Next.js frontend + FastAPI or Node backend + Postgres + pgvector (avoids a separate vector DB) + OpenAI or Anthropic API + Supabase for auth (reduces boilerplate significantly). The browser extension can start as a simple bookmarklet that sends a URL to the Market Scout.
+### Interview Coaching
+- Behavioral, technical, situational, and culture-fit questions
+- Scoring on relevance (0-10), specificity (0-10), communication (0-10)
+- Concrete improvement suggestions with example answers
 
+### Persistent AI Panel
+- Always accessible side drawer across all screens
+- Context-aware (knows which job/profile you're viewing)
+- Suggested actions tied to current screen
 
-## Frontend specs
+## Project Structure
 
-[FrontEnd Details ](FRONTEND.md).
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── (public)/           # Landing, login, signup
+│   ├── (app)/              # Authenticated screens
+│   └── api/                # API routes (BFF)
+├── features/               # Feature modules
+│   ├── profile/            # Profile intake, skills, experience
+│   ├── documents/          # CV editor, cover letter, templates
+│   ├── market/             # Job search, match score, salary
+│   ├── training/           # Mock interview, checklists
+│   └── ai-panel/           # Persistent AI chat panel
+├── components/ui/          # Shared primitives
+└── lib/                    # Utilities, API client, auth, store
+```
 
+## Implementation Phases
 
+### Phase 1: Foundation (Weeks 1-3)
+- Next.js project setup with App Router + TypeScript + Tailwind
+- Supabase auth (email + Google OAuth)
+- PostgreSQL schema + Prisma ORM
+- Profile intake wizard
+- Dashboard shell with AI panel layout
+- Basic AI chat
+
+### Phase 2: AI Memory + Profile (Weeks 4-6)
+- pgvector setup + embedding generation pipeline
+- Semantic profile retrieval
+- Conversation history with episodic memory
+- Persona Builder agent
+- Skills grid + experience timeline
+
+### Phase 3: Market + Documents (Weeks 7-9)
+- Job posting parser
+- Match scoring algorithm
+- Pitch Writer agent (CV tailoring)
+- Split-pane CV editor with streaming
+- Document export (PDF/DOCX)
+
+### Phase 4: Training + Polish (Weeks 10-12)
+- Interview Coach agent
+- Mock interview UI
+- Scoring + feedback system
+- Application checklist generator
+- Market Scout agent
+- Mobile responsive polish
+
+## Documentation
+
+- [Frontend Architecture](FRONTEND.md) — Detailed UI specs, component architecture, screen flows
+- [Project Deep Dive](project.md) — Persistence layer, AI memory, CV tailoring pipeline
+- [Cloud Architecture](memory-bank/cloud.md) — Alibaba Cloud deployment, service mapping, cost estimates
