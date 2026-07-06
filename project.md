@@ -1,0 +1,3 @@
+Great question — and this is actually a core feature of the app itself, so it's worth showing both **what the AI does** and **how you'd build it**.
+
+Here's the full tailoring workflow the Pitch Writer agent would run:The CV tailoring is one of the most valuable features in the whole app. Here's the agent pipeline that runs when a user hits "Tailor CV for this role":The branch at step 3 is crucial — the agent treats strong matches and gaps differently rather than papering over them. Now here's what the actual CV editor screen looks like when the tailored draft lands:
