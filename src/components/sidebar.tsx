@@ -10,6 +10,7 @@ const navItems = [
   { href: '/jobs', label: 'Jobs', icon: '💼' },
   { href: '/documents', label: 'Documents', icon: '📄' },
   { href: '/training', label: 'Training', icon: '🎯' },
+  { href: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
 export function Sidebar() {
@@ -40,13 +41,6 @@ export function Sidebar() {
           );
         })}
       </nav>
-
-      <div className="p-4 border-t border-surface-200">
-        <button className="sidebar-item w-full">
-          <span>⚙️</span>
-          <span>Settings</span>
-        </button>
-      </div>
     </aside>
   );
 }

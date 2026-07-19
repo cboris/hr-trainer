@@ -58,7 +58,7 @@ describe('ai client', () => {
 
   it('does NOT store on globalThis in production', () => {
     const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', configurable: true });
     delete (globalThis as any).ai;
 
     jest.resetModules();
@@ -66,6 +66,6 @@ describe('ai client', () => {
     expect((globalThis as any).ai).toBeUndefined();
     expect(ai).toBeDefined();
 
-    process.env.NODE_ENV = originalEnv;
+    Object.defineProperty(process.env, 'NODE_ENV', { value: originalEnv, configurable: true });
   });
 });

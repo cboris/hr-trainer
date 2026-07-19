@@ -13,3 +13,4 @@ paths:
 4. **Coverage Maintenance:** Ensure all new code changes maintain a minimum of $90\%$ unit test coverage.
 5. **No Blind Assumptions:** Do not assume a task is complete until `git diff` shows the relevant changes and the test suite passes without errors.
 6. **Error Output Feedback:** If a test fails, analyze the stack trace in the terminal before attempting a fix. Never guess at a solution; let the test runner output guide you.
+7. **Do not write meaningless tests:** Tests that asserts obvious trivial topics like getters or setters are not contributing to quality

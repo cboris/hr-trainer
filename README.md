@@ -1,6 +1,10 @@
 # Job Trainer AI — Personal Career Coach
 
+## About
 An AI-powered web application that helps job seekers build profiles, tailor CVs, prepare for interviews, and navigate the labor market — all through a persistent AI trainer that learns and remembers.
+
+
+Project is published under [MIT Open Source License](LICENSE) 
 
 ## What It Does
 
@@ -172,3 +176,5 @@ src/
 - [Frontend Architecture](FRONTEND.md) — Detailed UI specs, component architecture, screen flows
 - [Project Deep Dive](project.md) — Persistence layer, AI memory, CV tailoring pipeline
 - [Cloud Architecture](memory-bank/cloud.md) — Alibaba Cloud deployment, service mapping, cost estimates
+
+
