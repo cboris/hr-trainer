@@ -4,13 +4,19 @@ import { env } from '@/config/env';
 
 const e = env();
 
-const handler = NextAuth({
-  providers: [
+const providers = [];
+
+if (e.GOOGLE_ID && e.GOOGLE_SECRET) {
+  providers.push(
     GoogleProvider({
-      clientId: e.GOOGLE_ID ?? '',
-      clientSecret: e.GOOGLE_SECRET ?? '',
-    }),
-  ],
+      clientId: e.GOOGLE_ID,
+      clientSecret: e.GOOGLE_SECRET,
+    })
+  );
+}
+
+const handler = NextAuth({
+  providers,
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider === 'google') {
