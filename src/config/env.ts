@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const envSchema = z.object({
   // Database
-  DATABASE_URL: z.string().url(),
+  DATABASE_URL: z.string().url().default('postgresql://localhost:5432/job_trainer'),
 
   // Redis
   REDIS_URL: z.string().default('redis://localhost:6379'),

@@ -40,13 +40,12 @@ describe('env()', () => {
     expect(config.DASHSCOPE_EMBEDDING_MODEL).toBe('text-embedding-v3');
   });
 
-  it('throws when DATABASE_URL is missing', () => {
+  it('applies default when DATABASE_URL is missing', () => {
     delete process.env.DATABASE_URL;
 
-    expect(() => {
-      const { env } = require('@/config/env');
-      env();
-    }).toThrow('Invalid environment variables');
+    const { env } = require('@/config/env');
+    const config = env();
+    expect(config.DATABASE_URL).toBe('postgresql://localhost:5432/job_trainer');
   });
 
   it('throws when DATABASE_URL is not a valid URL', () => {

@@ -122,7 +122,7 @@ describe('POST /api/ai/chat', () => {
       profile: null,
       skills: [],
       experiences: [],
-      trainings: [],
+      trainingSessions: [],
     } as any);
     mockAiCreate.mockResolvedValue({
       choices: [{ message: { content: 'Hello! How can I help?' } }],
@@ -160,7 +160,7 @@ describe('POST /api/ai/chat', () => {
       profile: null,
       skills: [],
       experiences: [],
-      trainings: [],
+      trainingSessions: [],
     } as any);
     mockRedisGet.mockResolvedValue(null);
     mockAiCreate.mockResolvedValue({
@@ -183,7 +183,7 @@ describe('POST /api/ai/chat', () => {
       profile: null,
       skills: [],
       experiences: [],
-      trainings: [],
+      trainingSessions: [],
     } as any);
     mockRedisGet.mockResolvedValue(null);
     mockAiCreate.mockResolvedValue({

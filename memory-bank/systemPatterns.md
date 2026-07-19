@@ -6,41 +6,63 @@ The frontend is where users spend all their time, so it deserves real depth. Her
 
 **Technology stack**: Next.js 14+ (App Router) — SSR for public-facing pages (landing, login), client-side SPA behavior for the authenticated app. TypeScript throughout. Tailwind for styling. Zustand for lightweight client state. TanStack Query for all server data. Deployed on Alibaba Cloud SAE with CDN.
 
-### Key Screens and Their Roles
+### Implemented UI Components (Current State)
 
 ```
+src/
+  app/
+    layout.tsx                    ← Root layout: Inter font, metadata, Providers wrapper
+    globals.css                   ← Global styles + Tailwind design tokens
+    (app)/                        ← Route group for authenticated pages (shared sidebar layout)
+      dashboard/page.tsx          ← Server component: welcome, profile completion banner,
+                                    stats grid (skills/training/profile), recent training,
+                                    quick actions. Uses getServerSession + Prisma.
+      profile/page.tsx            ← Client component: 2-step wizard (basic info → skills).
+                                    Fetches/saves via /api/profile. Progress bar.
+    api/
+      ai/chat/route.ts            ← POST endpoint: streams AI responses via DashScope
+      profile/route.ts            ← GET/PUT: profile + skills CRUD
+      auth/[...nextauth]/route.ts ← NextAuth configuration
+  components/
+    providers.tsx                 ← Client providers: SessionProvider + QueryClientProvider
+    sidebar.tsx                   ← Navigation sidebar: Dashboard, Profile, Jobs, Documents,
+                                    Training links. Active route highlighting via usePathname.
+                                    Shows user name from session.
+    ai-panel.tsx                  ← AI chat panel: message list, textarea input, streaming
+                                    responses from /api/ai/chat. Auto-scroll, loading states.
+  lib/
+    ai.ts                         ← OpenAI singleton (DashScope), AI_CONFIG (model, temp, tokens)
+    prisma.ts                     ← Prisma client singleton
+    redis.ts                      ← Redis client singleton
+    s3.ts                         ← S3/OSS client singleton
+  config/
+    env.ts                        ← Centralized env var access (validated)
+```
+
+### Key Screens and Their Roles (Planned vs Implemented)
+
+```
+IMPLEMENTED
+├── /dashboard → Server-rendered overview: profile completeness, stats,
+│                recent training sessions, quick action cards
+├── /profile   → 2-step client wizard: basic info (headline, location,
+│                experience, summary) → skills (add/remove with levels)
+├── AI Panel   → Persistent chat component, fetches /api/ai/chat
+├── Sidebar    → Navigation with 5 items, active state, user display
+└── Providers  → SessionProvider + QueryClientProvider wrapping
+
+PLANNED (not yet implemented)
 PUBLIC SCREENS
 ├── / → Landing page (value prop, CTA, social proof)
 ├── /login → IDaaS OAuth (Google, GitHub, LinkedIn)
 ├── /signup → Registration with plan selection
 └── /pricing → Feature comparison
 
-AUTHENTICATED SCREENS (persistent AI panel on right side)
-├── /dashboard → Overview: profile completeness, recent jobs,
-│                  upcoming interviews, quick actions
-├── /profile
-│   ├── /profile/overview → Profile card, headline, summary
-│   ├── /profile/experience → Work history timeline editor
-│   ├── /profile/skills → Skills grid with levels
-│   ├── /profile/education → Education + certifications
-│   └── /profile/intake → Guided wizard (first-time setup)
-├── /market
-│   ├── /market/search → Job search with filters
-│   ├── /market/jobs/[id] → Job detail + match score
-│   └── /market/salary → Salary benchmarks
-├── /documents
-│   ├── /documents/cv → CV editor (split-pane with AI)
-│   ├── /documents/cover-letter → Cover letter builder
-│   └── /documents/templates → Template gallery
-├── /training
-│   ├── /training/interview → Mock interview session
-│   ├── /training/checklist → Application checklist
-│   ├── /training/history → Past sessions + scores
-│   └── /training/skills → Skill drill exercises
+AUTHENTICATED SCREENS
+├── /jobs (market) → Job search, detail, match score, salary benchmarks
+├── /documents → CV editor, cover letter builder, template gallery
+├── /training → Mock interview, checklist, session history, skill drills
 └── /settings → Account, preferences, integrations
-
-PERSISTENT OVERLAY
-└── AI Panel (right side drawer, always accessible)
 ```
 
 ### Core UX Design Decisions
@@ -49,9 +71,20 @@ PERSISTENT OVERLAY
 
 **Match scoring drives the UX.** The skill gap bars on the job detail are the core value proposition made visual — the user should immediately see what they have and what's missing. The AI actions below are directly tied to those gaps ("how to close skill gaps"), which makes the AI feel purposeful rather than generic.
 
-### Component Architecture — Organized by Feature, Not by Type
+### Component Architecture — Current vs Planned
 
 ```
+CURRENT (flat structure)
+src/
+  components/
+    providers.tsx       ← Auth + query providers
+    sidebar.tsx         ← Main navigation
+    ai-panel.tsx        ← AI chat interface
+  app/(app)/
+    dashboard/page.tsx  ← Dashboard (server component)
+    profile/page.tsx    ← Profile wizard (client component)
+
+PLANNED (feature-based structure)
 src/
   features/
     profile/        ← ProfileCard, SkillsGrid, IntakeWizard, ExperienceTimeline
