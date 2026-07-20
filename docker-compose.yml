@@ -62,6 +62,8 @@ services:
       S3_BUCKET: job-trainer-dev
       NEXTAUTH_URL: http://localhost:3000
       NEXTAUTH_SECRET: dev-secret-change-me
+      GOOGLE_ID: ${GOOGLE_ID:-}
+      GOOGLE_SECRET: ${GOOGLE_SECRET:-}
     depends_on:
       postgres:
         condition: service_healthy
