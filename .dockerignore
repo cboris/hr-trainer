@@ -1,0 +1,13 @@
+node_modules
+.next
+.git
+.gitignore
+.dockerignore
+Dockerfile
+docker-compose.yml
+*.md
+coverage
+.swc
+tsconfig.tsbuildinfo
+.env
+.env.local

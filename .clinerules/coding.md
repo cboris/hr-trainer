@@ -9,3 +9,7 @@
 ## Conventions
 - API response format: always `{ success: boolean, data?: T, error?: string }`.
 - Environment variables: access only through `src/config/env.ts`, never `process.env` directly.
+
+
+## Security
+- Never store credentials in git files for commit
