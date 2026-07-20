@@ -7,8 +7,7 @@ set -euo pipefail
 # =============================================================================
 
 echo "=== Job Trainer ECS Initialization ==="
-echo "Region: ${region:-unknown}"
-echo "Image Tag: ${image_tag:-latest}"
+echo "Image Tag: ${image_tag}"
 
 # =============================================================================
 # Install Docker
@@ -23,30 +22,9 @@ systemctl start docker
 # Install Docker Compose
 echo "Installing Docker Compose..."
 COMPOSE_VERSION="v2.24.0"
-curl -SL "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-linux-$(uname -m)" \
+curl -SL "https://github.com/docker/compose/releases/download/$${COMPOSE_VERSION}/docker-compose-linux-$$(uname -m)" \
   -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
-
-# =============================================================================
-# Configure ACR Authentication
-# =============================================================================
-
-echo "Configuring ACR authentication..."
-
-# Create Docker config directory
-mkdir -p /root/.docker
-
-# ACR credentials will be provided via ECS RAM role or environment
-# For now, create a placeholder that should be replaced with actual credentials
-cat > /root/.docker/config.json << 'DOCKER_CONFIG'
-{
-  "auths": {
-    "${acr_endpoint}": {
-      "auth": "${acr_auth_token}"
-    }
-  }
-}
-DOCKER_CONFIG
 
 # =============================================================================
 # Create Application Directory
@@ -72,12 +50,12 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://jobtrainer:\${DB_PASSWORD}@${rds_endpoint}:5432/jobtrainer
-      - REDIS_URL=redis://:${REDIS_PASSWORD}@${redis_endpoint}:6379
+      - DATABASE_URL=postgresql://jobtrainer:\$${DB_PASSWORD}@${rds_endpoint}:5432/jobtrainer
+      - REDIS_URL=redis://:\$${REDIS_PASSWORD}@${redis_endpoint}:6379
       - S3_ENDPOINT=https://${oss_endpoint}
       - S3_BUCKET=jobtrainer-production-storage
       - NEXTAUTH_URL=http://localhost:3000
-      - NEXTAUTH_SECRET=\${NEXTAUTH_SECRET}
+      - NEXTAUTH_SECRET=\$${NEXTAUTH_SECRET}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
@@ -135,14 +113,6 @@ cat > /etc/logrotate.d/job-trainer << 'LOGROTATE'
   copytruncate
 }
 LOGROTATE
-
-# =============================================================================
-# Setup Monitoring (Cloud Monitor Agent)
-# =============================================================================
-
-echo "Installing Cloud Monitor agent..."
-curl -o cms_install.sh https://cms-agent-region.oss-region-internal.aliyuncs.com/CmsAgent/cms_install.sh || true
-# bash cms_install.sh  # Uncomment when region is set
 
 # =============================================================================
 # Done

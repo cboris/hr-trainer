@@ -43,3 +43,9 @@ prisma/migrations/
 
 # Misc
 *.tsbuildinfo
+
+# terraform
+.terraform
+*.tfstate
+*.tfstate.*
+secrets.auto.tfvars

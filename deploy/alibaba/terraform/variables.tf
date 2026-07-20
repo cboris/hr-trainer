@@ -1,21 +1,10 @@
 # =============================================================================
-# Alibaba Cloud Credentials
-# =============================================================================
-
-variable "alicloud_access_key" {
-  description = "Alibaba Cloud Access Key ID"
-  type        = string
-  sensitive   = true
-}
-
-variable "alicloud_secret_key" {
-  description = "Alibaba Cloud Secret Access Key"
-  type        = string
-  sensitive   = true
-}
-
-# =============================================================================
 # General Configuration
+# =============================================================================
+# Alibaba Cloud credentials are loaded from environment variables:
+#   export ALICLOUD_ACCESS_KEY="your-access-key-id"
+#   export ALICLOUD_SECRET_KEY="your-secret-access-key"
+# Or use: aliyun configure
 # =============================================================================
 
 variable "region" {
@@ -30,6 +19,7 @@ variable "region" {
       "ap-northeast-1",  # Tokyo
       "us-west-1",       # Silicon Valley
       "eu-central-1",    # Frankfurt
+      "eu-west-1",       # London
     ], var.region)
     error_message = "Region must be outside China to avoid ICP registration requirements."
   }
@@ -62,22 +52,16 @@ variable "vpc_cidr" {
   default     = "10.0.0.0/16"
 }
 
-variable "public_subnet_cidrs" {
-  description = "CIDR blocks for public subnets (one per AZ)"
-  type        = list(string)
-  default     = ["10.0.1.0/24", "10.0.2.0/24"]
+variable "public_subnet_cidr" {
+  description = "CIDR block for public subnet"
+  type        = string
+  default     = "10.0.1.0/24"
 }
 
-variable "private_subnet_cidrs" {
-  description = "CIDR blocks for private subnets (one per AZ)"
-  type        = list(string)
-  default     = ["10.0.10.0/24", "10.0.11.0/24"]
-}
-
-variable "availability_zones" {
-  description = "Availability zones for multi-AZ deployment"
-  type        = list(string)
-  default     = ["ap-southeast-1a", "ap-southeast-1b"]
+variable "private_subnet_cidr" {
+  description = "CIDR block for private subnet"
+  type        = string
+  default     = "10.0.10.0/24"
 }
 
 variable "admin_cidr" {

@@ -3,6 +3,8 @@
 ## About
 An AI-powered web application that helps job seekers build profiles, tailor CVs, prepare for interviews, and navigate the labor market — all through a persistent AI trainer that learns and remembers.
 
+Prepared for  a hackaton : https://devpost.com/software/talent-trainer#updates
+
 
 Project is published under [MIT Open Source License](LICENSE) 
 

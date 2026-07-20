@@ -41,19 +41,28 @@ This guide covers deploying Job Trainer to Alibaba Cloud using ECS instances wit
 
 ### 1. Configure Credentials
 
+Set Alibaba Cloud credentials as environment variables:
+
 ```bash
-cd deploy/alibaba/terraform
-cp terraform.tfvars.example terraform.tfvars
+export ALICLOUD_ACCESS_KEY="your-access-key-id"
+export ALICLOUD_SECRET_KEY="your-secret-access-key"
 ```
 
-Edit `terraform.tfvars` with your Alibaba Cloud credentials:
+Or use Alibaba Cloud CLI:
 
-```hcl
-access_key = "your-access-key"
-secret_key = "your-secret-key"
+```bash
+aliyun configure
 ```
 
 Get credentials from: [RAM Console](https://ram.console.aliyun.com/) > Users > Create User > AccessKey Management
+
+Then configure the deployment variables:
+
+```bash
+cd deploy/alibaba/terraform
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your deployment settings (no credentials needed)
+```
 
 ### 2. Deploy Infrastructure
 

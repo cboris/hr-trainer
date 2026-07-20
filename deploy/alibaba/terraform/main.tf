@@ -11,15 +11,20 @@ terraform {
     }
   }
   backend "oss" {
+    region = "ap-southeast-1"
     bucket = "job-trainer-terraform-state"
     prefix = "terraform/state"
   }
 }
 
+# Alibaba Cloud credentials are loaded from environment variables:
+#   export ALICLOUD_ACCESS_KEY="your-access-key-id"
+#   export ALICLOUD_SECRET_KEY="your-secret-access-key"
+#
+# Or use Alibaba Cloud CLI: aliyun configure
+# See: https://registry.terraform.io/providers/aliyun/alicloud/latest/docs#authentication
 provider "alicloud" {
-  access_key = var.alicloud_access_key
-  secret_key = var.alicloud_secret_key
-  region     = var.region
+  region = var.region
 }
 
 # Using Singapore region (ap-southeast-1) to avoid Chinese ICP registration requirements
@@ -29,25 +34,27 @@ provider "alicloud" {
 # VPC & Networking
 # =============================================================================
 
+locals {
+  zone_id = "ap-southeast-1a"
+}
+
 resource "alicloud_vpc" "main" {
   vpc_name   = "job-trainer-vpc"
   cidr_block = var.vpc_cidr
 }
 
 resource "alicloud_vswitch" "public" {
-  count        = length(var.public_subnet_cidrs)
   vpc_id       = alicloud_vpc.main.id
-  cidr_block   = var.public_subnet_cidrs[count.index]
-  zone_id      = var.availability_zones[count.index]
-  vswitch_name = "job-trainer-public-${count.index + 1}"
+  cidr_block   = var.public_subnet_cidr
+  zone_id      = local.zone_id
+  vswitch_name = "job-trainer-public"
 }
 
 resource "alicloud_vswitch" "private" {
-  count        = length(var.private_subnet_cidrs)
   vpc_id       = alicloud_vpc.main.id
-  cidr_block   = var.private_subnet_cidrs[count.index]
-  zone_id      = var.availability_zones[count.index]
-  vswitch_name = "job-trainer-private-${count.index + 1}"
+  cidr_block   = var.private_subnet_cidr
+  zone_id      = local.zone_id
+  vswitch_name = "job-trainer-private"
 }
 
 # =============================================================================
@@ -127,7 +134,7 @@ resource "alicloud_instance" "app" {
   instance_name        = "job-trainer-app-${count.index + 1}"
   instance_type        = var.app_instance_type
   image_id             = var.app_image_id
-  vswitch_id           = alicloud_vswitch.public[count.index % length(var.public_subnet_cidrs)].id
+  vswitch_id           = alicloud_vswitch.public.id
   security_groups      = [alicloud_security_group.app.id]
   key_name             = alicloud_ecs_key_pair.app.key_name
   internet_max_bandwidth_out = var.app_public_ip ? 10 : 0
@@ -160,19 +167,13 @@ resource "alicloud_ecs_key_pair" "app" {
 # =============================================================================
 
 resource "alicloud_db_instance" "main" {
-  engine               = "PostgreSQL"
-  engine_version       = "16.0"
-  instance_type        = var.rds_instance_type
-  instance_storage     = var.rds_storage
-  db_instance_net_type = "Intranet"
-  instance_name        = "job-trainer-db"
-  security_ips         = [var.vpc_cidr]
-  vswitch_id           = alicloud_vswitch.private[0].id
-
-  # Backup settings
-  backup_time      = "02:00Z"
-  backup_period    = "Monday,Wednesday,Friday"
-  retention_period = 7
+  engine           = "PostgreSQL"
+  engine_version   = "16.0"
+  instance_type    = var.rds_instance_type
+  instance_storage = var.rds_storage
+  instance_name    = "job-trainer-db"
+  security_ips     = [var.vpc_cidr]
+  vswitch_id       = alicloud_vswitch.private.id
 
   # Security
   ssl_action = "Close" # Enable in production with proper certificates
@@ -192,7 +193,7 @@ resource "alicloud_rds_account" "main" {
 
 resource "alicloud_db_connection" "main" {
   instance_id   = alicloud_db_instance.main.id
-  prefix        = "jobtrainer"
+  connection_prefix = "jobtrainer"
   port          = "5432"
 }
 
@@ -204,12 +205,12 @@ resource "alicloud_kvstore_instance" "main" {
   db_instance_name  = "job-trainer-redis"
   instance_class    = var.redis_instance_class
   instance_type     = "Redis"
-  engine_version    = "7.0"
-  vswitch_id        = alicloud_vswitch.private[0].id
+  engine_version    = "5.0"
+  vswitch_id        = alicloud_vswitch.private.id
   security_ips      = [var.vpc_cidr]
   password          = var.redis_password
   backup_time       = "03:00Z"
-  backup_period     = "Monday,Wednesday,Friday"
+  backup_period     = ["Monday", "Wednesday", "Friday"]
 
   tags = {
     Environment = var.environment
@@ -279,21 +280,33 @@ resource "alicloud_oss_bucket" "static" {
 
 # =============================================================================
 # Container Registry (ACR)
+# Note: ACR Enterprise Edition is expensive. For hackathon/development,
+# images can be built locally and transferred via SCP or a simpler registry.
+# Uncomment below when ready for production ACR.
 # =============================================================================
 
-resource "alicloud_cr_ee_namespace" "main" {
-  name        = var.acr_namespace
-  auto_create = true
-  default_visibility = "PRIVATE"
-}
-
-resource "alicloud_cr_ee_repo" "app" {
-  namespace  = alicloud_cr_ee_namespace.main.name
-  name       = "job-trainer"
-  repo_type  = "PRIVATE"
-  summary    = "Job Trainer application repository"
-  detail     = "Contains Docker images for the Job Trainer Next.js application"
-}
+# resource "alicloud_cr_ee_instance" "main" {
+#   instance_name = "job-trainer-acr"
+#   instance_type = "Enterprise"
+#   image_scanner = "ACR"
+#   payment_type  = "PayAsYouGo"
+# }
+#
+# resource "alicloud_cr_ee_namespace" "main" {
+#   instance_id  = alicloud_cr_ee_instance.main.id
+#   name         = var.acr_namespace
+#   auto_create  = true
+#   default_visibility = "PRIVATE"
+# }
+#
+# resource "alicloud_cr_ee_repo" "app" {
+#   instance_id = alicloud_cr_ee_instance.main.id
+#   namespace   = alicloud_cr_ee_namespace.main.name
+#   name        = "job-trainer"
+#   repo_type   = "PRIVATE"
+#   summary     = "Job Trainer application repository"
+#   detail      = "Contains Docker images for the Job Trainer Next.js application"
+# }
 
 # =============================================================================
 # SLB (Load Balancer)
@@ -303,7 +316,7 @@ resource "alicloud_slb_load_balancer" "main" {
   load_balancer_name = "job-trainer-slb"
   address_type       = "internet"
   load_balancer_spec = "slb.s1.small"
-  vswitch_id         = alicloud_vswitch.public[0].id
+  vswitch_id         = alicloud_vswitch.public.id
 
   tags = {
     Environment = var.environment
@@ -318,7 +331,7 @@ resource "alicloud_slb_listener" "http" {
   protocol                  = "http"
   bandwidth                 = -1
   health_check              = "on"
-  health_check_connect_port = "backend"
+  health_check_connect_port = 3000
   health_check_uri          = "/api/health"
 }
 
@@ -332,7 +345,7 @@ resource "alicloud_slb_listener" "https" {
   bandwidth                 = -1
   ssl_certificate_id        = var.ssl_certificate_id
   health_check              = "on"
-  health_check_connect_port = "backend"
+  health_check_connect_port = 3000
   health_check_uri          = "/api/health"
 }
 
