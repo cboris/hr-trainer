@@ -1,0 +1,71 @@
+# =============================================================================
+# Alibaba Cloud Credentials
+# Get these from: https://ram.console.aliyun.com/manage/ak
+# =============================================================================
+
+alicloud_access_key = "your-access-key-id"
+alicloud_secret_key = "your-secret-access-key"
+
+# =============================================================================
+# General Configuration
+# =============================================================================
+
+# Singapore region avoids Chinese ICP registration requirements
+region       = "ap-southeast-1"
+project_name = "jobtrainer"
+environment  = "production"
+
+# =============================================================================
+# Networking
+# =============================================================================
+
+vpc_cidr             = "10.0.0.0/16"
+public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs = ["10.0.10.0/24", "10.0.11.0/24"]
+availability_zones   = ["ap-southeast-1a", "ap-southeast-1b"]
+
+# IMPORTANT: Restrict SSH access to your IP address
+# Find your IP: curl ifconfig.me
+admin_cidr = "YOUR_IP_ADDRESS/32"
+
+# =============================================================================
+# ECS (Application Servers)
+# =============================================================================
+
+app_instance_count = 2
+app_instance_type  = "ecs.c6.xlarge" # 4 vCPU, 8 GiB
+app_public_ip      = false           # Set true only if not using SLB
+
+# Generate SSH key: ssh-keygen -t ed25519 -C "job-trainer"
+# Then paste the contents of ~/.ssh/job-trainer.pub below
+ssh_public_key = "ssh-ed25519 AAAA... your-key-here"
+
+# =============================================================================
+# Container Registry (ACR)
+# =============================================================================
+
+acr_namespace = "jobtrainer"
+image_tag     = "latest"
+
+# =============================================================================
+# RDS PostgreSQL
+# =============================================================================
+
+rds_instance_type = "pg.n2.small.1" # 2 vCPU, 4 GiB
+rds_storage       = 20              # GB
+db_username       = "jobtrainer"
+db_password       = "CHANGE_ME_strong_password_here"
+
+# =============================================================================
+# Redis (Tair)
+# =============================================================================
+
+redis_instance_class = "redis.master.small.default" # 1 GiB
+redis_password       = "CHANGE_ME_strong_redis_password"
+
+# =============================================================================
+# SSL / HTTPS (Optional)
+# =============================================================================
+
+ssl_enabled        = false
+ssl_certificate_id = "" # Set when ssl_enabled = true
